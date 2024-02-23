@@ -1,16 +1,20 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnDestroy, OnInit } from "@angular/core";
 import { IProduct } from "./product";
+import { ProductService } from "./product.service";
+import { Subscription } from "rxjs";
 
 @Component({
   selector: 'pm-products',
   templateUrl: './product-list.component.html',
   styleUrls: ['./product-list.component.css']
 })
-export class ProductListComponent implements OnInit{
+export class ProductListComponent implements OnInit, OnDestroy{
   pageTitle: string = 'Product List';
   imgWidth = 50;
   imgMargin = 2;
   showImage = true;
+  error = '';
+  sub!: Subscription;
 
   private _listFilter = '';
   get listFilter(): string{
@@ -23,32 +27,24 @@ export class ProductListComponent implements OnInit{
   }
 
   filteredProducts: IProduct[] = [];
-  products: IProduct[] = [
-    {
-      "productId": 1,
-      "productName": "Leaf Rake",
-      "productCode": "GDN-0011",
-      "releaseDate": "March 19, 2021",
-      "description": "Leaf rake with 48-inch wooden handle.",
-      "price": 19.959,
-      "starRating": 3.2,
-      "imageUrl": "assets/images/leaf_rake.png"
-    },
-    {
-      "productId": 2,
-      "productName": "Garden Cart",
-      "productCode": "GDN-0023",
-      "releaseDate": "March 18, 2021",
-      "description": "15 gallon capacity rolling garden cart",
-      "price": 32.99,
-      "starRating": 4.2,
-      "imageUrl": "assets/images/garden_cart.png"
-    },
-  ];
+  products: IProduct[] = [];
+
+  constructor(private productService: ProductService) {}
 
   ngOnInit(): void {
+    this.sub = this.productService.getProducts().subscribe(
+      {
+        next: (products) => {
+          this.products = products;
+          this.filteredProducts = this.products;
+          this.listFilter = 'cart';
+        },
+        error:(error) => this.error = error 
+      }
+    );
     console.log('this is ngOninit');
-    this.listFilter = 'cart';
+    // this.listFilter = 'cart';
+    // this.filteredProducts = this.products;
     console.log('private backing varible:',this._listFilter);
     
   }
@@ -65,5 +61,9 @@ export class ProductListComponent implements OnInit{
 
   onRatingClicked(message: string){
     console.log('Receive the event data:', message);
+  }
+
+  ngOnDestroy(): void {
+    this.sub.unsubscribe();
   }
 }
